@@ -6,6 +6,7 @@ class Main {
     public static void main(String[] args) {
 
         final Scanner scanner = new Scanner(System.in);
+        Map<Integer, Human> contacts = new HashMap<>();
 
         MenuType menuType;
 
@@ -16,7 +17,7 @@ class Main {
 
             switch (menuType){
                 case ADD:
-                    functionAdd();
+                    functionAdd(contacts);
                     break;
 
                 case REMOVE:
@@ -32,7 +33,7 @@ class Main {
                     break;
 
                 case LIST:
-                    functionList();
+                    functionList(contacts);
                     break;
 
             }
@@ -41,9 +42,47 @@ class Main {
 
     }
 
-    public static void functionAdd(){ }
+    public static void functionAdd(Map<Integer, Human> contacts){
+
+        final Scanner scanner = new Scanner(System.in);
+        final Human.humanBuilder robotBuilder = new Human.humanBuilder();
+
+        System.out.print("Enter the name: ");
+        String name = scanner.nextLine();
+
+        System.out.print("Enter the surname: ");
+        String surname = scanner.nextLine();
+
+        System.out.print("Enter the number: ");
+        String number = scanner.nextLine();
+
+        if(number.isEmpty()){
+            number = "[no number]";
+        }
+
+        Human human = robotBuilder
+                .setName(name)
+                .setSurname(surname)
+                .setNumber(number)
+                .build();
+
+        contacts.put(contacts.size() + 1, human);
+        System.out.println("The record added.");
+
+    }
+
     public static void functionRemove(){}
-    public static void functionList(){}
+    public static void functionList(Map<Integer, Human> contacts){
+
+        if(contacts.size() == 0){
+
+            System.out.println("The Phone Book has 0 records.");
+        }
+
+        for (int i = 1; i <= contacts.keySet().size(); i++) {
+            System.out.print(i + ". " + contacts.get(i));
+        }
+    }
     public static void functionEdit(){}
     public static void functionCount(){}
 
