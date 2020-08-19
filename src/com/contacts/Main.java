@@ -13,6 +13,7 @@ class Main {
         do {
 
             System.out.print("Enter action (add, remove, edit, count, list, exit): ");
+
             menuType = MenuType.findByLabel(scanner.next());
 
             switch (menuType){
@@ -21,15 +22,15 @@ class Main {
                     break;
 
                 case REMOVE:
-                    functionRemove();
+                    functionRemove(contacts);
                     break;
 
                 case EDIT:
-                    functionEdit();
+                    functionEdit(contacts);
                     break;
 
                 case COUNT:
-                    functionCount();
+                    functionCount(contacts);
                     break;
 
                 case LIST:
@@ -56,8 +57,14 @@ class Main {
         System.out.print("Enter the number: ");
         String number = scanner.nextLine();
 
+        String regex = "^([\\+?][0-9]{1,3} ?([ \\.\\-])?)? ?([\\(]{1}[0-9]{3}[\\)])? [0-9]{3} ?\\-?[0-9]{3} ?\\-?[A-Za-z0-9]{1,4}"; //+0 (123) 456-789-ABcd
+
         if(number.isEmpty()){
             number = "[no number]";
+        }
+
+        if(!number.matches(regex)){
+            System.out.println("Wrong number format!");
         }
 
         Human human = robotBuilder
@@ -71,20 +78,31 @@ class Main {
 
     }
 
-    public static void functionRemove(){}
-    public static void functionList(Map<Integer, Human> contacts){
+    public static void functionRemove(Map<Integer, Human> contacts){
 
         if(contacts.size() == 0){
-
-            System.out.println("The Phone Book has 0 records.");
+            System.out.println("No records to remove!");
         }
+
+    }
+
+    public static void functionList(Map<Integer, Human> contacts){
 
         for (int i = 1; i <= contacts.keySet().size(); i++) {
             System.out.print(i + ". " + contacts.get(i));
         }
     }
-    public static void functionEdit(){}
-    public static void functionCount(){}
+
+    public static void functionEdit(Map<Integer, Human> contacts){
+
+        if(contacts.size() == 0){
+            System.out.println("No records to edit!");
+        }
+    }
+
+    public static void functionCount(Map<Integer, Human> contacts){
+            System.out.println("The Phone Book has " + contacts.size() + " records.");
+    }
 
 }
 
@@ -93,7 +111,6 @@ class Human {
     private String Name;
     private String Surname;
     private String Numer;
-
 
     Human(String name, String surname, String number) {
         this.Name = name;
@@ -107,20 +124,20 @@ class Human {
         private String Surname;
         private String Number;
 
-
         humanBuilder setName(String name) {
             this.Name = name;
             return this;
         }
+
         humanBuilder setSurname(String surname) {
             this.Surname = surname;
             return this;
         }
+
         humanBuilder setNumber(String number) {
             this.Number = number;
             return this;
         }
-
 
         Human build() {
             return new Human(Name, Surname, Number);
