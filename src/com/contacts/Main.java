@@ -6,7 +6,7 @@ class Main {
     public static void main(String[] args) {
 
         final Scanner scanner = new Scanner(System.in);
-        Map<Integer, Human> contacts = new HashMap<>();
+        Map<Integer, Human> humanHashMap = new HashMap<>();
 
         MenuType menuType;
 
@@ -18,23 +18,23 @@ class Main {
 
             switch (menuType){
                 case ADD:
-                    functionAdd(contacts);
+                    functionAdd(humanHashMap);
                     break;
 
                 case REMOVE:
-                    functionRemove(contacts);
+                    functionRemove(humanHashMap);
                     break;
 
                 case EDIT:
-                    functionEdit(contacts);
+                    functionEdit(humanHashMap);
                     break;
 
                 case COUNT:
-                    functionCount(contacts);
+                    functionCount(humanHashMap);
                     break;
 
                 case LIST:
-                    functionList(contacts);
+                    functionList(humanHashMap);
                     break;
 
             }
@@ -55,7 +55,7 @@ class Main {
         String surname = scanner.nextLine();
 
         System.out.print("Enter the number: ");
-        String number = "+0 (123) 456-789-ABcd";
+        String number = scanner.nextLine();
 
         String regex = "^([\\+?][0-9]{1,3} ?([ \\.\\-])?)? ?([\\(]{1}[0-9]{3}[\\)])? [0-9]{3} ?\\-?[0-9]{3} ?\\-?[A-Za-z0-9]{1,4}"; //+0 (123) 456-789-ABcd
 
@@ -80,16 +80,27 @@ class Main {
 
     public static void functionRemove(Map<Integer, Human> contacts){
 
+        Scanner scanner = new Scanner(System.in);
+
         if(contacts.size() == 0){
             System.out.println("No records to remove!");
+            return;
         }
+
+        System.out.print("Select a record: ");
+
+        int key = scanner.nextInt();
+
+        contacts.remove(key);
+
+        System.out.println("The record removed!");
 
     }
 
     public static void functionList(Map<Integer, Human> contacts){
 
-        for (int i = 1; i <= contacts.keySet().size(); i++) {
-            System.out.print(i + ". " + contacts.get(i));
+        for ( Map.Entry<Integer, Human> entry : contacts.entrySet()) {
+            System.out.print(entry.getKey() + ". " + entry.getValue());
         }
     }
 
@@ -175,6 +186,7 @@ class Main {
     public static  void changeNumber(Map<Integer, Human> contacts, int record){
 
         Scanner scanner = new Scanner(System.in);
+        String regex = "^([\\+?][0-9]{1,3} ?([ \\.\\-])?)? ?([\\(]{1}[0-9]{3}[\\)])? [0-9]{3} ?\\-?[0-9]{3} ?\\-?[A-Za-z0-9]{1,4}";
 
         Human human = contacts.get(record);
         contacts.get(record);
@@ -182,6 +194,10 @@ class Main {
         System.out.print("Enter number: ");
 
         String number = scanner.next();
+
+        if(!number.matches(regex)){
+            System.out.println("Wrong number format!");
+        }
 
         human.setNumber(number);
 
