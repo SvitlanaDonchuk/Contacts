@@ -46,7 +46,7 @@ class Main {
     public static void functionAdd(Map<Integer, Human> contacts){
 
         final Scanner scanner = new Scanner(System.in);
-        final Human.humanBuilder robotBuilder = new Human.humanBuilder();
+        final Human.humanBuilder humanBuilder = new Human.humanBuilder();
 
         System.out.print("Enter the name: ");
         String name = scanner.nextLine();
@@ -55,7 +55,7 @@ class Main {
         String surname = scanner.nextLine();
 
         System.out.print("Enter the number: ");
-        String number = scanner.nextLine();
+        String number = "+0 (123) 456-789-ABcd";
 
         String regex = "^([\\+?][0-9]{1,3} ?([ \\.\\-])?)? ?([\\(]{1}[0-9]{3}[\\)])? [0-9]{3} ?\\-?[0-9]{3} ?\\-?[A-Za-z0-9]{1,4}"; //+0 (123) 456-789-ABcd
 
@@ -67,7 +67,7 @@ class Main {
             System.out.println("Wrong number format!");
         }
 
-        Human human = robotBuilder
+        Human human = humanBuilder
                 .setName(name)
                 .setSurname(surname)
                 .setNumber(number)
@@ -95,13 +95,100 @@ class Main {
 
     public static void functionEdit(Map<Integer, Human> contacts){
 
+        Scanner scanner = new Scanner(System.in);
+
         if(contacts.size() == 0){
             System.out.println("No records to edit!");
+        }
+
+        for (int i = 1; i <= contacts.keySet().size(); i++) {
+            System.out.print(i + ". " + contacts.get(i));
+        }
+
+        System.out.print("Select a record: ");
+
+        int record = scanner.nextInt();
+
+        System.out.print("Select a field (name, surname, number): ");
+
+        Fields field = Fields.findFieldsByLabel(scanner.next());
+
+        switch (field) {
+            case NAME:
+                changeName(contacts, record);
+                break;
+
+            case SURNAME:
+                changeSurname(contacts, record);
+                break;
+
+            case NUMBER:
+                changeNumber(contacts, record);
+                break;
+
         }
     }
 
     public static void functionCount(Map<Integer, Human> contacts){
             System.out.println("The Phone Book has " + contacts.size() + " records.");
+    }
+
+    public static  void changeName(Map<Integer, Human> contacts, int record){
+
+        Scanner scanner = new Scanner(System.in);
+
+        Human human = contacts.get(record);
+        contacts.get(record);
+
+        System.out.print("Enter name: ");
+
+        String name = scanner.next();
+
+        human.setName(name);
+
+        contacts.put(record, human);
+        System.out.println("The record updated!");
+
+        System.out.println(contacts. get(record));
+
+    }
+
+    public static  void changeSurname(Map<Integer, Human> contacts, int record){
+
+        Scanner scanner = new Scanner(System.in);
+
+        Human human = contacts.get(record);
+        contacts.get(record);
+
+        System.out.print("Enter surname: ");
+
+        String surname = scanner.next();
+
+        human.setSurname(surname);
+
+        contacts.put(record, human);
+        System.out.println("The record updated!");
+
+        System.out.println(contacts. get(record));
+    }
+
+    public static  void changeNumber(Map<Integer, Human> contacts, int record){
+
+        Scanner scanner = new Scanner(System.in);
+
+        Human human = contacts.get(record);
+        contacts.get(record);
+
+        System.out.print("Enter number: ");
+
+        String number = scanner.next();
+
+        human.setNumber(number);
+
+        contacts.put(record, human);
+        System.out.println("The record updated!");
+
+        System.out.println(contacts. get(record));
     }
 
 }
@@ -110,12 +197,24 @@ class Human {
 
     private String Name;
     private String Surname;
-    private String Numer;
+    private String Number;
 
     Human(String name, String surname, String number) {
         this.Name = name;
         this.Surname = surname;
-        this.Numer = number;
+        this.Number = number;
+    }
+
+    public void setName(String name) {
+        Name = name;
+    }
+
+    public void setSurname(String surname) {
+        Surname = surname;
+    }
+
+    public void setNumber(String number) {
+        Number = number;
     }
 
     public static class humanBuilder {
@@ -146,7 +245,7 @@ class Human {
 
     @Override
     public String toString() {
-        return Name + " " + Surname + ", " + Numer + "\n";
+        return Name + " " + Surname + ", " + Number + "\n";
     }
 }
 
@@ -174,4 +273,26 @@ enum MenuType {
         return null;
     }
 
+}
+
+enum Fields{
+
+    NAME("name"),
+    SURNAME("surname"),
+    NUMBER("number");
+
+    private String fieldLabel;
+
+    Fields(String fieldLabel){ this.fieldLabel = fieldLabel; }
+
+    public String getFieldLabel() { return fieldLabel; }
+
+    public static Fields findFieldsByLabel(String fieldLabel){
+        for (Fields fieldType : Fields.values()) {
+            if (fieldLabel.equalsIgnoreCase(fieldType.getFieldLabel())) {
+                return fieldType;
+            }
+        }
+        return null;
+    }
 }
