@@ -2,11 +2,11 @@ package com.contacts;
 
 import java.util.*;
 
-class Main {
+public class Main {
     public static void main(String[] args) {
 
-        final Scanner scanner = new Scanner(System.in);
-        Map<Integer, Human> humanHashMap = new HashMap<>();
+        Scanner scanner = new Scanner(System.in);
+        List<Human> list = new ArrayList<>();
 
         MenuType menuType;
 
@@ -18,23 +18,23 @@ class Main {
 
             switch (menuType){
                 case ADD:
-                    functionAdd(humanHashMap);
+                    functionAdd(list);
                     break;
 
                 case REMOVE:
-                    functionRemove(humanHashMap);
+                    functionRemove(list);
                     break;
 
                 case EDIT:
-                    functionEdit(humanHashMap);
+                    functionEdit(list);
                     break;
 
                 case COUNT:
-                    functionCount(humanHashMap);
+                    functionCount(list);
                     break;
 
                 case LIST:
-                    functionList(humanHashMap);
+                    functionList(list);
                     break;
 
             }
@@ -43,7 +43,7 @@ class Main {
 
     }
 
-    public static void functionAdd(Map<Integer, Human> contacts){
+    private static void functionAdd(List<Human> list ){
 
         final Scanner scanner = new Scanner(System.in);
         final Human.humanBuilder humanBuilder = new Human.humanBuilder();
@@ -57,13 +57,14 @@ class Main {
         System.out.print("Enter the number: ");
         String number = scanner.nextLine();
 
-        String regex = "^([\\+?][0-9]{1,3} ?([ \\.\\-])?)? ?([\\(]{1}[0-9]{3}[\\)])? [0-9]{3} ?\\-?[0-9]{3} ?\\-?[A-Za-z0-9]{1,4}"; //+0 (123) 456-789-ABcd
+        String regex = "^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
 
         if(number.isEmpty()){
             number = "[no number]";
         }
 
         if(!number.matches(regex)){
+            number = "[no number]";
             System.out.println("Wrong number format!");
         }
 
@@ -73,52 +74,57 @@ class Main {
                 .setNumber(number)
                 .build();
 
-        contacts.put(contacts.size() + 1, human);
+        list.add( human);
         System.out.println("The record added.");
 
     }
 
-    public static void functionRemove(Map<Integer, Human> contacts){
+    private static void functionRemove(List<Human> list){
 
         Scanner scanner = new Scanner(System.in);
 
-        if(contacts.size() == 0){
+        if(list.size() == 0){
             System.out.println("No records to remove!");
             return;
+        }
+
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print(i + 1 + ". " + list.get(i));
         }
 
         System.out.print("Select a record: ");
 
         int key = scanner.nextInt();
 
-        contacts.remove(key);
+        list.remove(key - 1);
 
         System.out.println("The record removed!");
 
     }
 
-    public static void functionList(Map<Integer, Human> contacts){
+    private static void functionList(List<Human> list){
 
-        for ( Map.Entry<Integer, Human> entry : contacts.entrySet()) {
-            System.out.print(entry.getKey() + ". " + entry.getValue());
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print(i + 1 + ". " + list.get(i));
         }
     }
 
-    public static void functionEdit(Map<Integer, Human> contacts){
+    private static void functionEdit(List<Human> list){
 
         Scanner scanner = new Scanner(System.in);
 
-        if(contacts.size() == 0){
+        if(list.isEmpty()){
             System.out.println("No records to edit!");
+            return;
         }
 
-        for (int i = 1; i <= contacts.keySet().size(); i++) {
-            System.out.print(i + ". " + contacts.get(i));
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print(i + 1 + ". " + list.get(i));
         }
 
         System.out.print("Select a record: ");
 
-        int record = scanner.nextInt();
+        int record = scanner.nextInt() - 1;
 
         System.out.print("Select a field (name, surname, number): ");
 
@@ -126,30 +132,31 @@ class Main {
 
         switch (field) {
             case NAME:
-                changeName(contacts, record);
+                changeName(list, record);
                 break;
 
             case SURNAME:
-                changeSurname(contacts, record);
+                changeSurname(list, record);
                 break;
 
             case NUMBER:
-                changeNumber(contacts, record);
+                changeNumber(list, record);
                 break;
 
         }
     }
 
-    public static void functionCount(Map<Integer, Human> contacts){
-            System.out.println("The Phone Book has " + contacts.size() + " records.");
+    private static void functionCount(List<Human> list){
+
+        System.out.println("The Phone Book has " + list.size() + " records.");
+
     }
 
-    public static  void changeName(Map<Integer, Human> contacts, int record){
+    private static  void changeName(List<Human> list, int record){
 
         Scanner scanner = new Scanner(System.in);
 
-        Human human = contacts.get(record);
-        contacts.get(record);
+        Human human = list.get(record);
 
         System.out.print("Enter name: ");
 
@@ -157,19 +164,15 @@ class Main {
 
         human.setName(name);
 
-        contacts.put(record, human);
         System.out.println("The record updated!");
-
-        System.out.println(contacts. get(record));
 
     }
 
-    public static  void changeSurname(Map<Integer, Human> contacts, int record){
+    private static  void changeSurname(List<Human> list, int record){
 
         Scanner scanner = new Scanner(System.in);
 
-        Human human = contacts.get(record);
-        contacts.get(record);
+        Human human = list.get(record);
 
         System.out.print("Enter surname: ");
 
@@ -177,36 +180,36 @@ class Main {
 
         human.setSurname(surname);
 
-        contacts.put(record, human);
         System.out.println("The record updated!");
 
-        System.out.println(contacts. get(record));
     }
 
-    public static  void changeNumber(Map<Integer, Human> contacts, int record){
+    private static  void changeNumber(List<Human> list, int record){
 
         Scanner scanner = new Scanner(System.in);
-        String regex = "^([\\+?][0-9]{1,3} ?([ \\.\\-])?)? ?([\\(]{1}[0-9]{3}[\\)])? [0-9]{3} ?\\-?[0-9]{3} ?\\-?[A-Za-z0-9]{1,4}";
 
-        Human human = contacts.get(record);
-        contacts.get(record);
+        String regex = "\\s^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
+
+        Human human = list.get(record);
 
         System.out.print("Enter number: ");
 
-        String number = scanner.next();
+        String number = scanner.nextLine();
 
         if(!number.matches(regex)){
+
+            number = "[no number]";
+            human.setNumber(number);
+
             System.out.println("Wrong number format!");
+
+        } else {
+            human.setNumber(number);
         }
 
-        human.setNumber(number);
-
-        contacts.put(record, human);
         System.out.println("The record updated!");
 
-        System.out.println(contacts. get(record));
     }
-
 }
 
 class Human {
@@ -215,25 +218,25 @@ class Human {
     private String Surname;
     private String Number;
 
-    Human(String name, String surname, String number) {
+    private Human(String name, String surname, String number) {
         this.Name = name;
         this.Surname = surname;
         this.Number = number;
     }
 
-    public void setName(String name) {
+    void setName(String name) {
         Name = name;
     }
 
-    public void setSurname(String surname) {
+    void setSurname(String surname) {
         Surname = surname;
     }
 
-    public void setNumber(String number) {
+    void setNumber(String number) {
         Number = number;
     }
 
-    public static class humanBuilder {
+    static class humanBuilder {
 
         private String Name;
         private String Surname;
