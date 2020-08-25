@@ -1,40 +1,53 @@
 package com.contacts;
 
 import java.util.*;
+import java.time.LocalDate;
 
 public class Main {
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
-        List<Human> list = new ArrayList<>();
+        List<Human> humanList = new ArrayList<>();
+        List<Organization> organizationList = new ArrayList<>();
 
-        MenuType menuType;
+        Action menuType;
+        Type type;
 
         do {
 
-            System.out.print("Enter action (add, remove, edit, count, list, exit): ");
+            System.out.print("Enter action (add, remove, edit, count, info, exit): ");
 
-            menuType = MenuType.findByLabel(scanner.next());
+            menuType = Action.findByLabel(scanner.next());
 
             switch (menuType){
                 case ADD:
-                    functionAdd(list);
+                    System.out.print("Enter the type (person, organization): ");
+                    type = Type.findTypeByLabel(scanner.next());
+
+                    switch (type){
+                        case PERSON:
+                            functionAddHuman(humanList);
+                            break;
+                        case ORGANIZATION:
+                            functionAddOrganization(organizationList);
+                            break;
+                    }
                     break;
 
                 case REMOVE:
-                    functionRemove(list);
+                    functionRemove(humanList);
                     break;
 
                 case EDIT:
-                    functionEdit(list);
+                    functionEdit(humanList);
                     break;
 
                 case COUNT:
-                    functionCount(list);
+                    functionCount(humanList);
                     break;
 
-                case LIST:
-                    functionList(list);
+                case INFO:
+                    functionInfo(humanList);
                     break;
 
             }
@@ -43,39 +56,75 @@ public class Main {
 
     }
 
-    private static void functionAdd(List<Human> list ){
+    private static void functionAddHuman(List<Human> humanList ){
 
         final Scanner scanner = new Scanner(System.in);
         final Human.humanBuilder humanBuilder = new Human.humanBuilder();
 
-        System.out.print("Enter the name: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Enter the surname: ");
-        String surname = scanner.nextLine();
-
-        System.out.print("Enter the number: ");
-        String number = scanner.nextLine();
-
         String regex = "^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
 
-        if(number.isEmpty()){
-            number = "[no number]";
+        System.out.print("Enter the name: ");
+        String humanName = scanner.nextLine();
+
+        System.out.print("Enter the surname: ");
+        String humanSurname = scanner.nextLine();
+
+        System.out.print("Enter the birth date: ");
+        LocalDate local = LocalDate.parse(scanner.next());
+        String humanDate = local.toString();
+
+        System.out.print("Enter the number: ");
+        String humanNumber = scanner.next();
+
+
+        if(humanNumber.isEmpty() || humanDate.isEmpty()){
+            humanNumber = "[no data]";
         }
 
-        if(!number.matches(regex)){
-            number = "[no number]";
+        if(!humanNumber.matches(regex)){
+            humanNumber = "[no data]";
             System.out.println("Wrong number format!");
         }
 
         Human human = humanBuilder
-                .setName(name)
-                .setSurname(surname)
-                .setNumber(number)
+                .setName(humanName)
+                .setSurname(humanSurname)
+                .setBirthDate(humanDate)
+                .setNumber(humanNumber)
                 .build();
 
-        list.add( human);
+        humanList.add( human);
         System.out.println("The record added.");
+
+    }
+
+    private  static void functionAddOrganization(List<Organization> organizationList) {
+        final Scanner scanner = new Scanner(System.in);
+        final Organization.organizationBuilder organizationBuilder = new Organization.organizationBuilder();
+
+        String regex = "^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
+
+        System.out.print("Enter the organization name: ");
+        String organizationName = scanner.next();
+
+        System.out.print("Enter the address: ");
+        String organizationAddress = scanner.next();
+
+        System.out.print("Enter the number: ");
+        String organizationNumber = scanner.next();
+
+        Organization organization = organizationBuilder
+                .setNameOfOrganization(organizationName)
+                .setAddress(organizationAddress)
+                .setNumber(organizationNumber)
+                .build();
+
+        organizationList.add(organization);
+        System.out.println("The record added.");
+
+        if(organizationNumber.isEmpty() || !organizationNumber.matches(regex)){
+            organizationNumber = "[no data]";
+        }
 
     }
 
@@ -102,7 +151,7 @@ public class Main {
 
     }
 
-    private static void functionList(List<Human> list){
+    private static void functionInfo(List<Human> list){
 
         for (int i = 0; i < list.size(); i++) {
             System.out.print(i + 1 + ". " + list.get(i));
@@ -210,36 +259,110 @@ public class Main {
         System.out.println("The record updated!");
 
     }
+
 }
 
-class Human {
+abstract class BaseClass{
+
+    private String number;
+
+    BaseClass(String number){
+        this.number = number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+}
+
+class Organization extends BaseClass{
+
+    private String nameOfOrganization;
+    private String address;
+
+    Organization(String number, String nameOfOrganization, String address) {
+        super(number);
+        this.nameOfOrganization = nameOfOrganization;
+        this.address = address;
+    }
+
+    public void setNameOfOrganization(String nameOfOrganization) {
+        this.nameOfOrganization = nameOfOrganization;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    static class organizationBuilder {
+
+        private String nameOfOrganization;
+        private String address;
+        private String number;
+
+        organizationBuilder setNameOfOrganization(String nameOfOrganization){
+            this.nameOfOrganization = nameOfOrganization;
+            return this;
+        }
+
+        organizationBuilder setAddress(String address){
+            this.address = address;
+            return this;
+        }
+
+        organizationBuilder setNumber(String number) {
+            this.number = number;
+            return this;
+        }
+
+        Organization build(){
+            return new Organization(nameOfOrganization, address, number);
+        }
+
+    }
+
+    @Override
+    public String toString() {
+        return "Organization name: " + nameOfOrganization + "\n" +
+                "Address: " + address + "\n" +
+                "Number: " + getNumber() + "\n" +
+                "Time created: " + "\n" +
+                "Time last edit: " + "\n";
+    }
+
+
+}
+
+class Human extends BaseClass{
 
     private String Name;
     private String Surname;
-    private String Number;
+    private String BirthDate;
 
-    private Human(String name, String surname, String number) {
-        this.Name = name;
-        this.Surname = surname;
-        this.Number = number;
+     Human(String name, String surname, String number, String birthDate) {
+         super(number);
+         this.Name = name;
+         this.Surname = surname;
+         this.BirthDate = birthDate;
     }
 
     void setName(String name) {
-        Name = name;
+         Name = name;
     }
 
     void setSurname(String surname) {
-        Surname = surname;
-    }
-
-    void setNumber(String number) {
-        Number = number;
+         Surname = surname;
     }
 
     static class humanBuilder {
 
         private String Name;
         private String Surname;
+        private String BirthDate;
         private String Number;
 
         humanBuilder setName(String name) {
@@ -257,35 +380,47 @@ class Human {
             return this;
         }
 
-        Human build() {
-            return new Human(Name, Surname, Number);
+        humanBuilder setBirthDate(String birthDate) {
+            this.BirthDate = birthDate;
+            return this;
         }
+
+        Human build() {
+            return new Human(Name, Surname, Number, BirthDate);
+        }
+
     }
 
     @Override
     public String toString() {
-        return Name + " " + Surname + ", " + Number + "\n";
+        return "Name: " + Name + "\n" +
+                "Surname: " + Surname + "\n" +
+                "Birth date: " + BirthDate + "\n" +
+                "Gender: " + "\n" +
+                "Number: " + getNumber() + "\n" +
+                "Time created: " + "\n" +
+                "Time last edit: " + "\n";
     }
 }
 
-enum MenuType {
+enum Action {
 
     ADD("add"),
     REMOVE("remove"),
     EDIT("edit"),
     COUNT("count"),
-    LIST("list"),
+    INFO("info"),
     EXIT("exit");
 
-    private String label;
+    private String actionLabel;
 
-    MenuType(String label){ this.label = label; }
+    Action(String actionLabel){ this.actionLabel = actionLabel; }
 
-    public String getLabel() { return label; }
+    public String getActionLabel() { return actionLabel; }
 
-    public static MenuType findByLabel(String label){
-        for (MenuType type : MenuType.values()) {
-            if (label.equalsIgnoreCase(type.getLabel())) {
+    public static Action findByLabel(String actionLabel){
+        for (Action type : Action.values()) {
+            if (actionLabel.equalsIgnoreCase(type.getActionLabel())) {
                 return type;
             }
         }
@@ -315,3 +450,26 @@ enum Fields{
         return null;
     }
 }
+
+enum Type {
+
+    PERSON("person"),
+    ORGANIZATION("organization");
+
+    private String typeLabel;
+
+    Type(String typeLabel){ this.typeLabel = typeLabel; }
+
+    public String getTypeLabel() { return typeLabel; }
+
+    public static Type findTypeByLabel(String typeLabel){
+        for (Type type : Type.values()) {
+            if (typeLabel.equalsIgnoreCase(type.getTypeLabel())) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+}
+
