@@ -2,6 +2,8 @@ package com.contacts;
 
 import java.util.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 
 public class Main {
     public static void main(String[] args) {
@@ -13,7 +15,6 @@ public class Main {
         Type type;
 
         do {
-
             System.out.print("Enter action (add, remove, edit, count, info, exit): ");
 
             menuType = Action.findByLabel(scanner.next());
@@ -39,7 +40,7 @@ public class Main {
                     break;
 
                 case EDIT:
-                    functionHumanEdit(list);
+                    functionEdit(list);
                     break;
 
                 case COUNT:
@@ -60,6 +61,10 @@ public class Main {
 
         final Scanner scanner = new Scanner(System.in);
         final Human.humanBuilder humanBuilder = new Human.humanBuilder();
+        final LocalDateTime time = LocalDateTime.now();
+
+        humanBuilder.setCreatedTime(time);
+        humanBuilder.setEditTime(time);
 
         String regex = "^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
         String genderRegex = "^[mfMF]\\b";
@@ -71,12 +76,14 @@ public class Main {
         String humanSurname = scanner.nextLine();
 
         System.out.print("Enter the birth date: ");
-        LocalDate local = LocalDate.parse(scanner.nextLine());
-        String humanDate = local.toString();
+        String humanDate;
 
-        if(humanDate.isEmpty()){
-            System.out.println("Bad birth date!");
+        try {
+            LocalDate local = LocalDate.parse(scanner.nextLine());
+            humanDate = local.toString();
+        } catch (DateTimeParseException e){
             humanDate = "[no data]";
+            System.out.println("Bad birth date!");
         }
 
         System.out.print("Enter the gender (M, F): ");
@@ -109,13 +116,19 @@ public class Main {
                 .build();
 
         list.add( human);
+
         System.out.println("The record added.");
+        System.out.println();
 
     }
 
     private static void functionAddOrganization(List<BaseClass> list) {
         final Scanner scanner = new Scanner(System.in);
         final Organization.organizationBuilder organizationBuilder = new Organization.organizationBuilder();
+        final LocalDateTime time = LocalDateTime.now();
+
+        organizationBuilder.setCreatedTime(time);
+        organizationBuilder.setEditTime(time);
 
         String regex = "^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
 
@@ -139,7 +152,9 @@ public class Main {
                 .build();
 
         list.add(organization);
+
         System.out.println("The record added.");
+        System.out.println();
 
     }
 
@@ -163,10 +178,12 @@ public class Main {
         list.remove(key - 1);
 
         System.out.println("The record removed!");
+        System.out.println();
 
     }
 
     private static void functionInfo(List<BaseClass> list){
+
         Scanner scanner = new Scanner(System.in);
         int record;
 
@@ -178,21 +195,24 @@ public class Main {
         record = scanner.nextInt() - 1;
 
         System.out.print(list.get(record));
+        System.out.println();
 
     }
 
     private static void functionCount(List<BaseClass> list){
 
         System.out.println("The Phone Book has " + list.size() + " records.");
+        System.out.println();
 
     }
 
-    private static void functionHumanEdit(List<BaseClass> list){
+    private static void functionEdit(List<BaseClass> list){
 
         Scanner scanner = new Scanner(System.in);
 
         if(list.isEmpty()){
             System.out.println("No records to edit!");
+            System.out.println();
             return;
         }
 
@@ -204,28 +224,55 @@ public class Main {
 
         int record = scanner.nextInt() - 1;
 
-        System.out.print("Select a field (name, surname, birth, gender, number): ");
+        if(list.get(record) instanceof Human) {
 
-        Fields field = Fields.findFieldsByLabel(scanner.next());
+            System.out.print("Select a field (name, surname, birth, gender, number): ");
 
-        switch (field) {
-            case NAME:
-                changeName(list, record);
-                break;
+            Fields field = Fields.findFieldsByLabel(scanner.next());
 
-            case SURNAME:
-                changeSurname(list, record);
-                break;
+            switch (field) {
+                case NAME:
+                    changeName(list, record);
+                    break;
 
-            case BIRTH:
-                changeBirth(list, record);
+                case SURNAME:
+                    changeSurname(list, record);
+                    break;
 
-            case GENDER:
-                changeGender(list, record);
+                case BIRTH:
+                    changeBirth(list, record);
+                    break;
 
-            case NUMBER:
-                changeNumber(list, record);
-                break;
+                case GENDER:
+                    changeGender(list, record);
+                    break;
+
+                case NUMBER:
+                    changeNumber(list, record);
+                    break;
+
+            }
+        } else if (list.get(record) instanceof Organization){
+
+            System.out.print("Select a field (name, address, number): ");
+
+            Fields field = Fields.findFieldsByLabel(scanner.next());
+
+            switch (field){
+                case NAME:
+                    changeName(list, record);
+                    break;
+
+                case ADDRESS:
+                    changeAddress(list, record);
+                    break;
+
+                case NUMBER:
+                    changeNumber(list, record);
+                    break;
+            }
+
+
 
         }
     }
@@ -234,16 +281,35 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
-        BaseClass human = list.get(record);
+        BaseClass object = list.get(record);
 
         System.out.print("Enter name: ");
 
         String name = scanner.next();
 
-        human.setName(name);
+        object.setName(name);
+        object.setEditTime(LocalDateTime.now());
 
         System.out.println("The record updated!");
+        System.out.println();
 
+    }
+
+    private static void changeAddress(List<BaseClass> list, int record){
+
+        Scanner scanner = new Scanner(System.in);
+
+        Organization object = (Organization) list.get(record);
+
+        System.out.print("Enter address: ");
+
+        String address = scanner.nextLine();
+
+        object.setAddress(address);
+        object.setEditTime(LocalDateTime.now());
+
+        System.out.println("The record updated!");
+        System.out.println();
     }
 
     private static void changeSurname(List<BaseClass> list, int record){
@@ -257,16 +323,58 @@ public class Main {
         String surname = scanner.next();
 
         human.setSurname(surname);
+        human.setEditTime(LocalDateTime.now());
 
         System.out.println("The record updated!");
+        System.out.println();
 
+    }
+
+    private static void changeBirth(List<BaseClass> list, int record){
+
+        Scanner scanner = new Scanner(System.in);
+
+        Human human = (Human) list.get(record);
+
+        System.out.print("Enter Birth date: ");
+
+        String birth = scanner.next();
+
+        human.setBirth(birth);
+        human.setEditTime(LocalDateTime.now());
+
+        System.out.println("The record updated!");
+        System.out.println();
+    }
+
+    private static void changeGender(List<BaseClass> list, int record){
+
+        Scanner scanner = new Scanner(System.in);
+
+        String genderRegex = "^[mfMF]\\b";
+
+        Human human = (Human) list.get(record);
+
+        System.out.print("Enter gender: ");
+        String gender = scanner.next();
+
+        if(!gender.matches(genderRegex)){
+            human.setGender("[no data]");
+        } else {
+            human.setGender(gender);
+        }
+
+        human.setEditTime(LocalDateTime.now());
+
+        System.out.println("The record updated!");
+        System.out.println();
     }
 
     private static void changeNumber(List<BaseClass> list, int record){
 
         Scanner scanner = new Scanner(System.in);
 
-        String regex = "\\s^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,4})?)?";
+        String regex = "^\\s?^([+] ?[0-9]{1,3} ?|[0-9]{1,3} ?-?|[+]?[(][A-Za-z0-9]{1,}[)] ?)( ?-?[(]?[A-Za-z0-9]{2,3}[)]?( ?-?[A-Za-z0-9]{2,3}[)]?)?( ?-?[A-Za-z0-9]{2,3})?( ?-?[A-za-z0-9]{2,5})?)?";
 
         BaseClass human = list.get(record);
 
@@ -285,38 +393,11 @@ public class Main {
             human.setNumber(number);
         }
 
-        System.out.println("The record updated!");
-
-    }
-
-    private static void changeBirth(List<BaseClass> list, int record){
-
-        Scanner scanner = new Scanner(System.in);
-
-        Human human = (Human) list.get(record);
-
-        System.out.print("Enter Birth date: ");
-
-        String birth = scanner.next();
-
-        human.setBirth(birth);
+        human.setEditTime(LocalDateTime.now());
 
         System.out.println("The record updated!");
-    }
+        System.out.println();
 
-    private static void changeGender(List<BaseClass> list, int record){
-
-        Scanner scanner = new Scanner(System.in);
-
-        Human human = (Human) list.get(record);
-
-        System.out.print("Enter gender: ");
-
-        String gender = scanner.next();
-
-        human.setGender(gender);
-
-        System.out.println("The record updated!");
     }
 
 }
@@ -325,10 +406,15 @@ abstract class BaseClass{
 
     private String number;
     private String name;
+    private LocalDateTime createdTime;
+    private LocalDateTime editTime;
 
-    BaseClass(String number, String name){
+
+    BaseClass(String number, String name, LocalDateTime createdTime, LocalDateTime editTime){
         this.number = number;
         this.name = name;
+        this.createdTime = createdTime;
+        this.editTime = editTime;
     }
 
     public void setNumber(String number) {
@@ -347,15 +433,33 @@ abstract class BaseClass{
         return name;
     }
 
+    public LocalDateTime getCreatedTime() {
+        return createdTime;
+    }
 
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
+    }
+
+    public LocalDateTime getEditTime() {
+        return editTime;
+    }
+
+    public void setEditTime(LocalDateTime editTime) {
+        this.editTime = editTime;
+    }
 }
 
 class Organization extends BaseClass{
 
     private String address;
 
-    Organization(String name, String address, String number) {
-        super(number, name);
+    Organization(String name, String address, String number, LocalDateTime createdTime, LocalDateTime editTime) {
+        super(number, name, createdTime, editTime);
+        this.address = address;
+    }
+
+    public void setAddress(String address) {
         this.address = address;
     }
 
@@ -364,6 +468,8 @@ class Organization extends BaseClass{
         private String nameOfOrganization;
         private String address;
         private String number;
+        private LocalDateTime createdTime;
+        private LocalDateTime editTime;
 
         organizationBuilder setNameOfOrganization(String nameOfOrganization){
             this.nameOfOrganization = nameOfOrganization;
@@ -380,8 +486,18 @@ class Organization extends BaseClass{
             return this;
         }
 
+        organizationBuilder setCreatedTime(LocalDateTime createdTime) {
+            this.createdTime = createdTime;
+            return this;
+        }
+
+        organizationBuilder setEditTime(LocalDateTime editTime) {
+            this.editTime = editTime;
+            return this;
+        }
+
         Organization build(){
-            return new Organization(nameOfOrganization, address, number);
+            return new Organization(nameOfOrganization, address, number, createdTime, editTime);
         }
 
     }
@@ -391,8 +507,8 @@ class Organization extends BaseClass{
         return "Organization name: " + getName() + "\n" +
                 "Address: " + address + "\n" +
                 "Number: " + getNumber() + "\n" +
-                "Time created: " + "\n" +
-                "Time last edit: " + "\n";
+                "Time created: " + getCreatedTime() + "\n" +
+                "Time last edit: "+ getEditTime() + "\n";
     }
 
 
@@ -404,8 +520,9 @@ class Human extends BaseClass{
     private String BirthDate;
     private String gender;
 
-     Human(String name, String surname, String number, String birthDate, String gender) {
-         super(number, name);
+
+     Human(String name, String surname, String number, String birthDate, String gender, LocalDateTime createdTime, LocalDateTime editTime) {
+         super(number, name,createdTime, editTime);
          this.Surname = surname;
          this.BirthDate = birthDate;
          this.gender = gender;
@@ -427,6 +544,8 @@ class Human extends BaseClass{
          this.gender = gender;
     }
 
+
+
     static class humanBuilder {
 
         private String Name;
@@ -434,6 +553,8 @@ class Human extends BaseClass{
         private String BirthDate;
         private String Number;
         private String gender;
+        private LocalDateTime createdTime;
+        private LocalDateTime editTime;
 
         humanBuilder setName(String name) {
             this.Name = name;
@@ -442,11 +563,6 @@ class Human extends BaseClass{
 
         humanBuilder setSurname(String surname) {
             this.Surname = surname;
-            return this;
-        }
-
-        humanBuilder setNumber(String number) {
-            this.Number = number;
             return this;
         }
 
@@ -460,8 +576,23 @@ class Human extends BaseClass{
             return this;
         }
 
+        humanBuilder setNumber(String number) {
+            this.Number = number;
+            return this;
+        }
+
+        humanBuilder setCreatedTime(LocalDateTime createdTime) {
+            this.createdTime = createdTime;
+            return this;
+        }
+
+        humanBuilder setEditTime(LocalDateTime editTime) {
+            this.editTime = editTime;
+            return this;
+        }
+
         Human build() {
-            return new Human(Name, Surname, Number, BirthDate, gender);
+            return new Human(Name, Surname, Number, BirthDate, gender, createdTime, editTime);
         }
 
     }
@@ -473,8 +604,8 @@ class Human extends BaseClass{
                 "Birth date: " + BirthDate + "\n" +
                 "Gender: " + getGender() + "\n" +
                 "Number: " + getNumber() + "\n" +
-                "Time created: " + "\n" +
-                "Time last edit: " + "\n";
+                "Time created: " + getCreatedTime() +  "\n" +
+                "Time last edit: " + getEditTime() + "\n";
     }
 }
 
@@ -508,6 +639,7 @@ enum Fields{
 
     NAME("name"),
     SURNAME("surname"),
+    ADDRESS("address"),
     BIRTH ("birth"),
     GENDER("gender"),
     NUMBER("number");
@@ -531,7 +663,7 @@ enum Fields{
 enum Type {
 
     PERSON("person"),
-    ORGANIZATION("org");
+    ORGANIZATION("organization");
 
     private String typeLabel;
 
