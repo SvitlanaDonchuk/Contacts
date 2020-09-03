@@ -1,58 +1,347 @@
 package com.contacts;
 
-import java.util.List;
-import java.util.Scanner;
-import java.util.ArrayList;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class Main {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
 
-    public static void main(String[] args) {
-        ContactBook contactBook = new ContactBook();
         Scanner scanner = new Scanner(System.in);
 
-        while (true) {
+        ContactBook contactBook;
+        File file;
 
-            System.out.print("Enter action (add, remove, edit, count, info, exit): ");
+        try {
+            file = new File("././phonebook.db");
+            contactBook = (ContactBook) ContactBook.deserialize(file.getName());
+            System.out.printf("open %s\n\n", file.getName());
 
-            Action action = Action.findByLabel(scanner.next());
-
-            switch (action) {
-                case ADD:
-                    contactBook.add();
-                    break;
-
-                case REMOVE:
-                    contactBook.remove();
-                    break;
-
-                case EDIT:
-                    contactBook.edit();
-                    break;
-
-                case COUNT:
-                    contactBook.count();
-                    break;
-
-                case INFO:
-                    contactBook.info();
-                    break;
-
-                case EXIT:
-                    return;
-
-            }
+        }catch(FileNotFoundException e){
+            file = new File("././phonebook.db");
+            contactBook = new ContactBook();
+            System.out.printf("open %s\n\n", file.getName());
         }
+
+        Action type;
+
+        do {
+
+            System.out.print("[menu] Enter action (add, list, search, count, exit): ");
+
+            type = Action.findByLabel(scanner.next());
+
+            if (type != null) {
+                switch (type) {
+                    case ADD:
+                        contactBook.add();
+                        break;
+                    case LIST:
+                        contactBook.info();
+                        break;
+
+                    case SEARCH:
+                        contactBook.search();
+                        break;
+
+                    case COUNT:
+                        contactBook.count();
+                        break;
+                }
+            }
+        } while (type != Action.EXIT);
+
+        ContactBook.serialize(contactBook, "phonebook.db");
+
     }
 }
 
-abstract class Contact {
+class ContactBook implements Serializable{
+
+    private static final long serialVersionUID = 3L;
+
+    List<Contact> contacts = new ArrayList<>();
+    List<Contact> queryList;
+
+    public void add() {
+
+        Scanner scanner = new Scanner(System.in);
+        ContactManagerFactory managerFactory = new ContactManagerFactory();
+
+        System.out.print("Enter the type (person, organization): ");
+        String type = scanner.next();
+
+        ContactManager manager = managerFactory.createFactory(type);
+        Contact contact = manager.add();
+        contacts.add(contact);
+
+        System.out.println("A record added.\n");
+    }
+
+    public void edit(int i) {
+
+        Scanner scanner = new Scanner(System.in);
+        ContactManagerFactory managerFactory = new ContactManagerFactory();
+
+        if (contacts.size() == 0) {
+            System.out.println("No records to edit!");
+            return;
+        }
+
+        Contact contact = contacts.get(i);
+
+        ContactManager manager = managerFactory.createFactory(contact);
+
+        manager.edit();
+
+        contacts.set(i, contact);
+
+        System.out.println("Saved");
+
+        manager.info();
+
+        System.out.print("[record] Enter action (edit, delete, menu): ");
+        String recordType = scanner.next();
+
+        if(recordType.equalsIgnoreCase(String.valueOf(Action.MENU))){
+            System.out.println();
+            return;
+        }
+        if(recordType.equalsIgnoreCase(String.valueOf(Action.EDIT))){
+            edit(i);
+        }
+        if(recordType.equalsIgnoreCase(String.valueOf(Action.DELETE))){
+            remove(i);
+        }
+    }
+
+    public void editSearch(List<Contact> queryList, int i) {
+        Scanner scanner = new Scanner(System.in);
+        ContactManagerFactory managerFactory = new ContactManagerFactory();
+
+        if (contacts.size() == 0) {
+            System.out.println("No records to edit!");
+            return;
+        }
+
+        Contact contact = queryList.get(i);
+
+        ContactManager manager = managerFactory.createFactory(contact);
+
+        manager.edit();
+
+        queryList.set(i, contact);
+
+        System.out.println("Saved");
+
+        manager.info();
+
+        System.out.print("[record] Enter action (edit, delete, menu): ");
+        String recordType = scanner.next();
+
+        if(recordType.equalsIgnoreCase(String.valueOf(Action.MENU))){
+            System.out.println();
+            return;
+        }
+        if(recordType.equalsIgnoreCase(String.valueOf(Action.EDIT))){
+            editSearch(queryList, i);
+        }
+        if(recordType.equalsIgnoreCase(String.valueOf(Action.DELETE))){
+            removeSearch(queryList, i);
+        }
+    }
+
+    public void removeSearch(List<Contact> queryList, int i){
+        if (queryList.size() == 0) {
+            System.out.println("No records to remove!\n");
+            return;
+        }
+        Contact contact = queryList.get(i);
+
+        contacts.remove(contact);
+
+        System.out.println("The record removed!\n");
+    }
+
+    public void remove(int i) {
+        if (contacts.size() == 0) {
+            System.out.println("No records to remove!\n");
+            return;
+        }
+        Contact contact = contacts.get(i);
+
+        contacts.remove(contact);
+
+        System.out.println("The record removed!\n");
+    }
+
+    public void count() {
+        System.out.printf("The Phone Book has %d records.\n", contacts.size());
+        System.out.println();
+    }
+
+    public void info() {
+
+        Scanner scanner = new Scanner(System.in);
+        ContactManagerFactory managerFactory = new ContactManagerFactory();
+
+        if (contacts.size() == 0) {
+            System.out.println("No records to list!\n");
+            return;
+        }
+
+        list();
+
+        System.out.print("\n[list] Enter action ([number], back): ");
+
+        String str = scanner.next();
+        Action commonAction = Action.findByLabel(str);
+
+        if(commonAction == null) {
+            int index = Integer.parseInt(String.valueOf(str));
+
+            Contact contact = contacts.get(index - 1);
+
+            ContactManager manager = managerFactory.createFactory(contact);
+
+            manager.info();
+
+            System.out.print("[record] Enter Action: (edit, delete, menu): ");
+            String recordType = scanner.next();
+
+            if(recordType.equalsIgnoreCase(String.valueOf(Action.MENU))){
+                System.out.println();
+                return;
+            }
+            if(recordType.equalsIgnoreCase(String.valueOf(Action.EDIT))){
+                int i = Integer.parseInt(str);
+                edit(i - 1);
+            }
+            if(recordType.equalsIgnoreCase(String.valueOf(Action.DELETE))){
+                int i = Integer.parseInt(str);
+                remove(i - 1);
+            }
+
+        }
+
+        if(commonAction == Action.BACK){
+            System.out.println();
+        }
+    }
+
+    public void list() {
+
+        for (int i = 0; i < contacts.size(); i++) {
+            Contact contact = contacts.get(i);
+            if(contact instanceof Person) {
+                Person person = (Person) contacts.get(i);
+                System.out.printf("%d. %s %s\n", i + 1, person.getName(), person.getSurname());
+            } else if (contact instanceof Organization){
+                Organization organization = (Organization) contacts.get(i);
+                System.out.printf("%d. %s\n", i + 1, organization.getName());
+            }
+        }
+
+    }
+
+    public void search(){
+
+        Scanner scanner = new Scanner(System.in);
+        ContactManagerFactory managerFactory = new ContactManagerFactory();
+
+        System.out.print("Enter search query: ");
+
+        String query = scanner.next();
+
+        Pattern pattern = Pattern.compile( "(.*\\w*" + query + "\\w*.*)");
+
+        queryList = new ArrayList<>();
+
+        for (Contact contact : contacts) {
+            if (contact.getName().toLowerCase().matches(String.valueOf(pattern))) {
+                queryList.add(contact);
+            }
+        }
+
+        System.out.println("Found " + queryList.size() + " results:");
+
+        for (int i = 0; i < queryList.size(); i++) {
+            System.out.println(i + 1 + ". " + queryList.get(i).getName());
+        }
+
+        System.out.println();
+        System.out.print("[search] Enter action ([number], back, again): ");
+
+        String s = scanner.next();
+        Action searchAction = Action.findByLabel(s);
+
+        if(searchAction == null) {
+            int index = Integer.parseInt(String.valueOf(s));
+
+            Contact contact = queryList.get(index - 1);
+
+            ContactManager manager = managerFactory.createFactory(contact);
+
+            manager.info();
+
+            System.out.print("[record] Enter Action: (edit, delete, menu): ");
+            String recordType = scanner.next();
+
+            if(recordType.equalsIgnoreCase(String.valueOf(Action.MENU))){
+                System.out.println();
+                return;
+            }
+            if(recordType.equalsIgnoreCase(String.valueOf(Action.EDIT))){
+                int i = Integer.parseInt(s);
+                editSearch(queryList,i - 1);
+            }
+            if(recordType.equalsIgnoreCase(String.valueOf(Action.DELETE))){
+                int i = Integer.parseInt(s);
+                remove(i - 1);
+            }
+        }
+
+        if(searchAction == Action.BACK){
+            System.out.println();
+        }
+
+        if(searchAction == Action.AGAIN){
+            search();
+        }
+    }
+
+    public static void serialize(Object contact, String fileName) {
+
+        try(ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)))) {
+            oos.writeObject(contact);
+        } catch (IOException e) {
+            System.out.println("Can't save file due to " + e);
+        }
+
+    }
+
+    public static Object deserialize(String fileName) throws IOException, ClassNotFoundException {
+        FileInputStream fis = new FileInputStream(fileName);
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Object obj = ois.readObject();
+        ois.close();
+        return obj;
+    }
+}
+
+abstract class Contact implements Serializable {
+    private static final long serialVersionUID = 3L;
 
     private String name;
     private String number;
-    private LocalDateTime createdAt;
+    private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     Contact() {
@@ -93,105 +382,9 @@ abstract class Contact {
     }
 }
 
-class ContactBook {
-
-    List<Contact> contacts = new ArrayList<>();
-
-    Scanner scanner = new Scanner(System.in);
-
-    ContactManagerFactory managerFactory = new ContactManagerFactory();
-
-    public void add() {
-
-        System.out.print("Enter the type (person, organization): ");
-        String type = scanner.next();
-
-        ContactManager manager = managerFactory.createFactory(type);
-        Contact contact = manager.add();
-        contacts.add(contact);
-
-        System.out.println("The record added.\n");
-    }
-
-    private int readIndex() {
-        System.out.print("Select a record: ");
-        int itemList = Integer.parseInt(scanner.next());
-        return itemList - 1;
-    }
-
-    private int readIndexForOrg(){
-        System.out.print("Enter index to show info: ");
-        int itemList = Integer.parseInt(scanner.next());
-        return itemList - 1;
-
-    }
-
-    public void edit() {
-        if (contacts.size() == 0) {
-            System.out.println("No records to edit!");
-            return;
-        }
-
-        list();
-
-        int index = readIndex();
-
-        Contact contact = contacts.get(index);
-
-        ContactManager manager = managerFactory.createFactory(contact);
-
-        manager.edit();
-
-        contacts.set(index, contact);
-
-        System.out.println("The record updated!\n");
-
-    }
-
-    public void remove() {
-        if (contacts.size() == 0) {
-            System.out.println("No records to remove!");
-            return;
-        }
-
-        this.list();
-        int index = readIndex();
-        contacts.remove(index);
-
-        System.out.println("The record removed!");
-    }
-
-    public void count() {
-        System.out.printf("The Phone Book has %d records.\n", contacts.size());
-    }
-
-    public void info() {
-        if (contacts.size() == 0) {
-            System.out.println("No records to list!");
-            return;
-        }
-
-        list();
-
-        int index = readIndexForOrg();
-
-        Contact contact = contacts.get(index);
-
-        ContactManager manager = managerFactory.createFactory(contact);
-
-        manager.info();
-
-    }
-
-    public void list() {
-        for (int i = 0; i < contacts.size(); i++) {
-            Contact contact = contacts.get(i);
-            System.out.printf("%d. %s\n", i + 1, contact.getName());
-        }
-    }
-}
-
 class Person extends Contact {
+
+    private static final long serialVersionUID = 3L;
 
     private String surname;
     private LocalDate birthDate;
@@ -224,6 +417,8 @@ class Person extends Contact {
 
 class Organization extends Contact {
 
+    private static final long serialVersionUID = 3L;
+
     private String address;
 
     public void setAddress(String address) {
@@ -249,6 +444,40 @@ class ContactFactory {
                 return null;
         }
 
+    }
+}
+
+class ContactManagerFactory {
+
+    public ContactManager createFactory(String type) {
+
+        ContactFactory factory = new ContactFactory();
+        Contact contact = factory.createContact(type);
+
+        switch (type.toUpperCase()) {
+
+            case "PERSON":
+                return new PersonContactManager(contact);
+
+            case "ORGANIZATION":
+                return new OrganizationContactManager(contact);
+
+            default:
+                return null;
+        }
+    }
+
+    public ContactManager createFactory(Contact contact) {
+
+        if (contact.getClass() == Person.class) {
+            return new PersonContactManager(contact);
+        }
+
+        if (contact.getClass() == Organization.class) {
+            return new OrganizationContactManager(contact);
+        }
+
+        return null;
     }
 }
 
@@ -285,12 +514,12 @@ abstract class ContactManager {
     }
 
     void printCreatedTime() {
-        String date =  contact.getCreatedAt().toString().substring(0, 16);
+        String date =  contact.getCreatedAt().toString().substring(0, 19);
         System.out.printf("Time created: %s\n", date);
     }
 
     void printUpdatedTime() {
-        String date =  contact.getUpdatedAt().toString().substring(0, 16);
+        String date =  contact.getUpdatedAt().toString().substring(0, 19);
         System.out.printf("Time last edit: %s\n\n", date);
     }
 
@@ -299,40 +528,6 @@ abstract class ContactManager {
         return number.matches(regex);
     }
 
-}
-
-class ContactManagerFactory {
-
-    public ContactManager createFactory(String type) {
-
-        ContactFactory factory = new ContactFactory();
-        Contact contact = factory.createContact(type);
-
-        switch (type.toUpperCase()) {
-
-            case "PERSON":
-                return new PersonContactManager(contact);
-
-            case "ORGANIZATION":
-                return new OrganizationContactManager(contact);
-
-            default:
-                return null;
-        }
-    }
-
-    public ContactManager createFactory(Contact contact) {
-
-        if (contact.getClass() == Person.class) {
-            return new PersonContactManager(contact);
-        }
-
-        if (contact.getClass() == Organization.class) {
-            return new OrganizationContactManager(contact);
-        }
-
-        return null;
-    }
 }
 
 class PersonContactManager extends ContactManager {
@@ -371,7 +566,7 @@ class PersonContactManager extends ContactManager {
     private void readSurname() {
         System.out.print("Enter the surname: ");
         String surname = scanner.nextLine();
-        person.setSurname(surname);
+        person.setSurname(Objects.requireNonNullElse(surname, "[no data]"));
     }
 
     private void readBirthDate() {
@@ -382,7 +577,7 @@ class PersonContactManager extends ContactManager {
         try {
             birthDate = LocalDate.parse(birthDateIn);
         } catch (DateTimeParseException e) {
-            System.out.println("Bad birth date!");
+            System.out.print("Bad birth date!\n");
         }
 
         person.setBirthDate(birthDate);
@@ -392,10 +587,10 @@ class PersonContactManager extends ContactManager {
         System.out.print("Enter the gender (M, F): ");
         String gender = scanner.nextLine();
 
-        if (!gender.equalsIgnoreCase("M") || gender.equalsIgnoreCase("F")) {
-            System.out.println("Bad gender!");
-        } else {
+        if (gender.equalsIgnoreCase("M") || gender.equalsIgnoreCase("F")) {
             person.setGender(gender.toUpperCase().charAt(0));
+        } else {
+            System.out.print("Bad gender!\n");
         }
     }
 
@@ -403,28 +598,30 @@ class PersonContactManager extends ContactManager {
     public void edit() {
 
         System.out.print("Select a field (name, surname, birth, gender, number): ");
-        Fields field = Fields.findFieldsByLabel(scanner.nextLine());
+        PersonFields field = PersonFields.findFieldsByLabel(scanner.nextLine());
 
-        switch (field) {
-            case NAME:
-                readName();
-                break;
+        if (field != null) {
+            switch (field) {
+                case NAME:
+                    readName();
+                    break;
 
-            case SURNAME:
-                readSurname();
-                break;
+                case SURNAME:
+                    readSurname();
+                    break;
 
-            case BIRTH:
-                readBirthDate();
-                break;
+                case BIRTH:
+                    readBirthDate();
+                    break;
 
-            case GENDER:
-                readGender();
-                break;
+                case GENDER:
+                    readGender();
+                    break;
 
-            case NUMBER:
-                readPhone();
-                break;
+                case NUMBER:
+                    readPhone();
+                    break;
+            }
         }
 
         person.setUpdatedAt(LocalDateTime.now());
@@ -499,25 +696,32 @@ class OrganizationContactManager extends  ContactManager{
     private void readAddress(){
         System.out.print("Enter the address: ");
         String address = scanner.nextLine();
-        organization.setAddress(address);
+
+        if(!address.equalsIgnoreCase(" ")){
+            organization.setAddress(address);
+        } else {
+            organization.setAddress("[no data]");
+        }
     }
 
     @Override
     public void edit() {
 
         System.out.print("Select a field (name, address, number): ");
-        Fields field = Fields.findFieldsByLabel(scanner.nextLine());
+        PersonFields field = PersonFields.findFieldsByLabel(scanner.nextLine());
 
-        switch (field){
-            case NAME:
-                readName();
-                break;
-            case ADDRESS:
-                readAddress();
-                break;
-            case NUMBER:
-                readPhone();
-                break;
+        if (field != null) {
+            switch (field){
+                case NAME:
+                    readName();
+                    break;
+                case ADDRESS:
+                    readAddress();
+                    break;
+                case NUMBER:
+                    readPhone();
+                    break;
+            }
         }
 
         organization.setUpdatedAt(LocalDateTime.now());
@@ -547,7 +751,38 @@ class OrganizationContactManager extends  ContactManager{
 
 }
 
-enum Fields{
+enum Action{
+    MENU("menu"),
+    ADD("add"),
+    LIST("list"),
+    SEARCH("search"),
+    COUNT("count"),
+    EDIT("edit"),
+    DELETE("delete"),
+    EXIT("exit"),
+    BACK("back"),
+    AGAIN("again")
+    ;
+
+    private final String label;
+
+    Action(String label){ this.label = label; }
+
+    public String getLabel() { return label; }
+
+    public static Action findByLabel(String label){
+        for (Action type : Action.values()) {
+            if (label.equalsIgnoreCase(type.getLabel())) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+
+}
+
+enum PersonFields {
 
     NAME("name"),
     SURNAME("surname"),
@@ -556,41 +791,16 @@ enum Fields{
     GENDER("gender"),
     NUMBER("number");
 
-    private String fieldLabel;
+    private final String fieldLabel;
 
-    Fields(String fieldLabel){ this.fieldLabel = fieldLabel; }
+    PersonFields(String fieldLabel){ this.fieldLabel = fieldLabel; }
 
     public String getFieldLabel() { return fieldLabel; }
 
-    public static Fields findFieldsByLabel(String fieldLabel){
-        for (Fields fieldType : Fields.values()) {
+    public static PersonFields findFieldsByLabel(String fieldLabel){
+        for (PersonFields fieldType : PersonFields.values()) {
             if (fieldLabel.equalsIgnoreCase(fieldType.getFieldLabel())) {
                 return fieldType;
-            }
-        }
-        return null;
-    }
-}
-
-enum Action {
-
-    ADD("add"),
-    REMOVE("remove"),
-    EDIT("edit"),
-    COUNT("count"),
-    INFO("info"),
-    EXIT("exit");
-
-    private String actionLabel;
-
-    Action(String actionLabel){ this.actionLabel = actionLabel; }
-
-    public String getActionLabel() { return actionLabel; }
-
-    public static Action findByLabel(String actionLabel){
-        for (Action type : Action.values()) {
-            if (actionLabel.equalsIgnoreCase(type.getActionLabel())) {
-                return type;
             }
         }
         return null;
